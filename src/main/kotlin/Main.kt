@@ -1,4 +1,3 @@
-import day1.HistorianHysteria
 import org.reflections.Reflections
 import util.Solution
 import java.lang.reflect.Constructor
@@ -7,7 +6,10 @@ import kotlin.time.measureTime
 
 fun main() {
     val day = getCurrentDay()
-    solveDay(day) { s -> HistorianHysteria(s) }
+    solveDay(day) { s ->
+        val solver = getConstructorOfDay(day).newInstance(s)
+        solver
+    }
 }
 
 private fun getCurrentDay(override: Int? = null): Int {
