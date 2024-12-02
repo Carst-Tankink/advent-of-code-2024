@@ -9,4 +9,9 @@ class RedNosedReportsTest {
     fun sample1star1() {
         assertEquals(2, sample1.star1())
     }
+
+    @Test
+    fun sample1star2() {
+        assertEquals(4, sample1.star2())
+    }
 }
