@@ -64,5 +64,5 @@ class CeresSearch(fileName: String?) : Solution<List<Char>, Int>(fileName) {
     }
 
     private fun List<Point>.extractWord(grid: Grid<Char>) =
-        this.map { grid[it] ?: '_' }.joinToString("")
+        this.map { grid[it] ?: "" }.joinToString("")
 }
