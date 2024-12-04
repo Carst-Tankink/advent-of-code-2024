@@ -1,5 +1,6 @@
 package day4
 
+import util.Grid
 import util.Helpers.Companion.toGrid
 import util.Point
 import util.Solution
@@ -10,8 +11,6 @@ class CeresSearch(fileName: String?) : Solution<List<Char>, Int>(fileName) {
     override fun solve1(data: List<List<Char>>): Int {
         val grid = data.toGrid()
 
-        fun List<Point>.extractWord() =
-            this.map { grid[it] ?: '_' }.joinToString("")
 
         fun findXmas(p: Point): Int {
             val offset = 0..3L
@@ -30,7 +29,7 @@ class CeresSearch(fileName: String?) : Solution<List<Char>, Int>(fileName) {
                 diagRD, diagLU, diagRU, diagLD
             ).map { line ->
                 line.map { p + it }
-            }.map { it.extractWord() }
+            }.map { it.extractWord(grid) }
             return words.count { it == "XMAS" }
         }
 
@@ -40,6 +39,30 @@ class CeresSearch(fileName: String?) : Solution<List<Char>, Int>(fileName) {
     }
 
     override fun solve2(data: List<List<Char>>): Int {
-        TODO("Not yet implemented")
+        val grid = data.toGrid()
+
+        fun isMas(s: String): Boolean {
+            return s == "MAS" || s == "SAM"
+        }
+
+        fun findXMas(p: Point): Boolean {
+            val topLeftBottomRight = listOf(
+                Point(p.x - 1, p.y - 1),
+                p,
+                Point(p.x + 1, p.y + 1)
+            ).extractWord(grid)
+
+            val topRightBottomLeft = listOf(
+                Point(p.x + 1, p.y - 1),
+                p,
+                Point(p.x - 1, p.y + 1),
+            ).extractWord(grid)
+
+            return isMas(topLeftBottomRight) && isMas(topRightBottomLeft)
+        }
+        return grid.keys.count { findXMas(it) }
     }
+
+    private fun List<Point>.extractWord(grid: Grid<Char>) =
+        this.map { grid[it] ?: '_' }.joinToString("")
 }

@@ -10,4 +10,9 @@ class CeresSearchTest {
     fun sample1star1() {
         assertEquals(18, sample1.star1())
     }
+
+    @Test
+    fun sample1Star2() {
+        assertEquals(9, sample1.star2())
+    }
 }
