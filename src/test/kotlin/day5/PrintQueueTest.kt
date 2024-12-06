@@ -12,4 +12,8 @@ class PrintQueueTest {
         assertEquals(143, sample1.star1())
     }
 
+    @Test
+    fun sample1star2() {
+        assertEquals(123, sample1.star2())
+    }
 }
