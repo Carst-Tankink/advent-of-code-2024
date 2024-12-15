@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import kotlin.time.measureTime
 
 fun main() {
-    val day = getCurrentDay()
+    val day = getCurrentDay(7)
     solveDay(day) { s ->
         val solver = getConstructorOfDay(day).newInstance(s)
         solver
