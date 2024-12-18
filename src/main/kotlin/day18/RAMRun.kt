@@ -10,15 +10,16 @@ class RAMRun(fileName: String?) : Solution<Point, Int>(fileName) {
     }
 
     override fun solve1(data: List<Point>): Int {
-        return findPath(Point(70, 70), data.take(1024).toSet())
+        return findPath(Point(70, 70), data.take(1024).toSet())!!
     }
 
-    fun findPath(end: Point, corrupt: Set<Point>): Int {
+    fun findPath(end: Point, corrupt: Set<Point>): Int? {
         val distances: MutableMap<Point, Int> = mutableMapOf()
 
         distances[Point(0, 0)] = 0
-        tailrec fun shortestPath(toVisit: Set<Point>, visited: Set<Point>): Int {
-            return if (end in distances) distances[end]!! else {
+        tailrec fun shortestPath(toVisit: Set<Point>, visited: Set<Point>): Int? {
+            return if (end in distances) distances[end]!!
+            else if (toVisit.isEmpty()) null else {
                 val current = toVisit.minBy { distances[it]!! }
                 val dist = distances[current] ?: Int.MAX_VALUE
 
@@ -40,6 +41,23 @@ class RAMRun(fileName: String?) : Solution<Point, Int>(fileName) {
     }
 
     override fun solve2(data: List<Point>): Int {
-        TODO("Not yet implemented")
+        val p = findBlocking(Point(70, 70), data, 1024)
+
+        println("First blocking $p")
+
+        return -1
+    }
+
+    fun findBlocking(end: Point, corrupt: List<Point>, start: Int): Point {
+        val firstBlocking = (start..corrupt.size)
+            .first {
+                if (it % 100 == 0) {
+                    println("At $it")
+                }
+                val corrupted = corrupt.take(it).toSet()
+                findPath(end, corrupted) == null
+            }
+
+        return corrupt[firstBlocking - 1]
     }
 }
