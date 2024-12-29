@@ -1,5 +1,6 @@
 package day12
 
+import util.Facing
 import util.Grid
 import util.Helpers.Companion.toGrid
 import util.Point
@@ -29,7 +30,36 @@ class GardenGroups(fileName: String?) : Solution<List<Char>, Long>(fileName) {
     }
 
     override fun solve2(data: List<List<Char>>): Long {
-        TODO("Not yet implemented")
+        val grid = data.toGrid()
+        val regions = calculateRegions(grid.keys, null, emptySet(), grid)
+
+        fun countCorners(point: Point): Int {
+            return listOf(Facing.UP, Facing.RIGHT, Facing.DOWN, Facing.LEFT, Facing.UP)
+                .zipWithNext()
+                .map { (first, second) ->
+                    listOf(
+                        grid[point],
+                        grid[point + first.vector],
+                        grid[point + second.vector],
+                        grid[point + first.vector + second.vector]
+                    )
+                }
+                .count { (target, side1, side2, corner) ->
+                    (target != side1 && target != side2) || // Outer corner
+                            (target == side1 && target == side2 && target != corner) // Inner corner
+                }
+        }
+
+        fun calculateValueBulk(region: Region): Long {
+            val points = region.region
+            val area = points.size
+
+            val sides = points.sumOf { countCorners(it) }
+
+            return area * sides.toLong()
+        }
+
+        return regions.sumOf { calculateValueBulk(it) }
     }
 
     private tailrec fun calculateRegions(
