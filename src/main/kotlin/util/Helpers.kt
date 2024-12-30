@@ -136,7 +136,7 @@ class Helpers {
             }
         }
 
-        fun printGrid(filledPoints: Set<Point>): String {
+        fun printGrid(filledPoints: Set<Point>, filled: String = "⬜️", empty: String = "◼️"): String {
             val minY = filledPoints.minOf { it.y }
             val maxY = filledPoints.maxOf { it.y }
             val verticalBorder = minY..maxY
@@ -145,7 +145,7 @@ class Helpers {
             val maxX = filledPoints.maxOf { it.x }
             return verticalBorder.joinToString("\n") { y ->
                 (minX..maxX).joinToString("") { x ->
-                    if (Point(x, y) in filledPoints) "⬜️" else "◼️"
+                    if (Point(x, y) in filledPoints) filled else empty
                 }
             }
         }

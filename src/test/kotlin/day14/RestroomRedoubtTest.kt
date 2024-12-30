@@ -8,6 +8,6 @@ class RestroomRedoubtTest {
 
     @Test
     fun sample1star1() {
-        assertEquals(12, sample1.calculateSafetyFactor(11, 7))
+        assertEquals(12, sample1.calculateSafetyFactor(11, 7, 100))
     }
 }

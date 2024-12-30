@@ -1,8 +1,8 @@
 package day14
 
+import util.Helpers.Companion.printGrid
 import util.Point
 import util.Solution
-
 
 
 fun Point.wrap(width: Int, height: Int): Point {
@@ -13,6 +13,7 @@ fun Point.wrap(width: Int, height: Int): Point {
         if (nextY < 0) nextY + height else nextY
     )
 }
+
 data class Robot(
     val position: Point,
     val velocity: Point
@@ -34,15 +35,15 @@ class RestroomRedoubt(fileName: String?) : Solution<Robot, Int>(fileName) {
     }
 
     override fun solve1(data: List<Robot>): Int {
-        return calculateSafetyFactor(101, 103)
+        return calculateSafetyFactor(101, 103, 100)
     }
 
-    fun calculateSafetyFactor(width: Int, height: Int): Int {
-        fun stepRobot(robot: Robot, steps: Int): Robot {
-            return robot.copy(position = (robot.position + (robot.velocity * steps)).wrap(width, height))
-        }
+    private fun stepRobot(robot: Robot, steps: Int, width: Int, height: Int): Robot {
+        return robot.copy(position = (robot.position + (robot.velocity * steps)).wrap(width, height))
+    }
 
-        val robots = data.map { stepRobot(it, 100) }
+    fun calculateSafetyFactor(width: Int, height: Int, steps: Int): Int {
+        val robots = data.map { stepRobot(it, steps, width, height) }
 
         val midpoint = Point(width / 2, height / 2)
 
@@ -58,7 +59,24 @@ class RestroomRedoubt(fileName: String?) : Solution<Robot, Int>(fileName) {
     }
 
     override fun solve2(data: List<Robot>): Int {
-        TODO("Not yet implemented")
+        val christmas = (1..10_000).first { s ->
+            val robots = data
+                .map { stepRobot(it, s, 101, 103) }
+
+            val robotsPerPosition = robots.groupBy { it.position }.mapValues { it.value.size }
+
+            robotsPerPosition.all { it.value == 1 }
+        }
+
+        println("Christmas at $christmas")
+
+        val robots = data.map { stepRobot(it, christmas, 101, 103) }.map { it.position }.toSet()
+
+        println(printGrid(robots, filled = "🎄", empty = "❄️" ))
+
+        return christmas
+
     }
+
 
 }
