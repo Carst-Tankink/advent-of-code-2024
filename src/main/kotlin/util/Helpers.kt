@@ -9,12 +9,17 @@ class Left<L, R>(value: L) : Either<L, R>(left = value, right = null)
 class Right<L, R>(value: R) : Either<L, R>(left = null, right = value)
 
 data class Point(val x: Long, val y: Long) {
+    constructor(x: Int, y: Int) : this(x.toLong(), y.toLong())
+
     operator fun plus(other: Point): Point = Point(x + other.x, y + other.y)
 
     operator fun minus(other: Point): Point = Point(x - other.x, y - other.y)
 
     operator fun rem(other: Point): Point = Point(x % other.x, y % other.y)
 
+    operator fun times(scalar: Int): Point {
+        return this.copy(x = x * scalar, y = y * scalar)
+    }
     fun getAllNeighbours(): List<Point> {
         val allPoints = listOf(
             Point(-1, -1), Point(0, -1), Point(1, -1),
