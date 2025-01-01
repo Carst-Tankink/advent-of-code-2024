@@ -1,7 +1,6 @@
 package day15
 
 import util.Facing
-import util.Helpers.Companion.printGrid
 import util.Helpers.Companion.toGrid
 import util.Point
 import util.Solution
