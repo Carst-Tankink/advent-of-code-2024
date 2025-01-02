@@ -16,5 +16,17 @@ class WarehouseWoesTest {
     fun sample2star1() {
         assertEquals(2028, sample2.star1())
     }
+
+    @Test
+    fun sample1star2() {
+        assertEquals(9021, sample1.star2())
+    }
+
+    @Test
+    fun sample3star2() {
+        val sample3 = WarehouseWoes("/day15/sample3")
+
+        assertEquals(618, sample3.star2())
+    }
 }
 
