@@ -1,9 +1,11 @@
 package day16
 
 import util.Facing
+import util.Grid
 import util.Helpers.Companion.toGrid
 import util.Point
 import util.Solution
+import java.util.PriorityQueue
 
 enum class Maze {
     EMPTY,
@@ -13,7 +15,7 @@ enum class Maze {
 }
 
 data class Reindeer(val pos: Point, val dir: Facing)
-class ReindeerMaze(fileName: String?) : Solution<List<Maze>, Long>(fileName) {
+class ReindeerMaze(fileName: String?) : Solution<List<Maze>, Int>(fileName) {
     override fun parse(line: String): List<Maze> {
         return line.map {
             when (it) {
@@ -26,86 +28,97 @@ class ReindeerMaze(fileName: String?) : Solution<List<Maze>, Long>(fileName) {
         }
     }
 
-    override fun solve1(data: List<List<Maze>>): Long {
+    override fun solve1(data: List<List<Maze>>): Int {
+        val maze = data.toGrid()
+        val start = maze.filter { it.value == Maze.START }.keys.first()
+        val startReindeer = Reindeer(start, Facing.RIGHT)
+
+        return bestPath(setOf(startReindeer), maze)
+    }
+
+    override fun solve2(data: List<List<Maze>>): Int {
         val maze = data.toGrid()
         val start = maze.filter { it.value == Maze.START }.keys.first()
         val end = maze.filter { it.value == Maze.END }.keys.first()
-
         val startReindeer = Reindeer(start, Facing.RIGHT)
-        val distances: MutableMap<Reindeer, Long> = mutableMapOf(startReindeer to 0)
 
-        fun canTurnLeft(r: Reindeer): Boolean {
-            val posToLeft =  when (r.dir) {
-                Facing.LEFT -> r.pos + Point(0, 1)
-                Facing.RIGHT -> r.pos + Point(0, -1)
-                Facing.UP -> r.pos + Point(-1, 0)
-                Facing.DOWN -> r.pos + Point(1, 0)
-            }
+        val cheapestPath = bestPath(setOf(startReindeer), maze)
+        val startPath = listOf(startReindeer)
 
-            return maze[posToLeft] != Maze.WALL
-        }
+        val queue = PriorityQueue<Pair<List<Reindeer>, Int>>(compareBy { it.second })
+            .apply { add(startPath to 0) }
 
-        fun canTurnRight(r: Reindeer): Boolean {
-            val posToRight =  when (r.dir) {
-                Facing.LEFT -> r.pos + Point(0, -1)
-                Facing.RIGHT -> r.pos + Point(0, 1)
-                Facing.UP -> r.pos + Point(1, 0)
-                Facing.DOWN -> r.pos + Point(-1, 0)
-            }
+        val costs: MutableMap<Reindeer, Int> = mutableMapOf()
 
-            return maze[posToRight] != Maze.WALL
-        }
+        tailrec fun findAllShortestPaths(
+            pointsInShortest: Set<Point>,
+        ): Set<Point> {
+            return if (queue.isEmpty()) pointsInShortest else {
+                val (path, cost) = queue.poll()
+                when {
+                    (cost > cheapestPath) -> pointsInShortest
+                    (path.first().pos == end && cost == cheapestPath) ->
+                        findAllShortestPaths(pointsInShortest + path.map { it.pos }.toSet())
 
-        fun updateShortest(forward: Reindeer, score: Long) {
-            val currentShortest = distances[forward] ?: Long.MAX_VALUE
-            distances[forward] = minOf(currentShortest, score)
-        }
+                    (costs.getOrDefault(path.first(), Int.MAX_VALUE) >= cost) -> {
+                        costs[path.first()] = cost
 
-        tailrec fun bestPath(possiblePoints: Set<Reindeer>, visited: Set<Reindeer>): Long {
-            return if (distances.keys.any { it.pos == end })
-                distances
-                .filter { it.key.pos == end }
-                .minOf { it.value }
-            else {
-                val next = possiblePoints.minBy { distances[it] ?: Long.MAX_VALUE }
-                val currentDistance = distances[next]!!
+                        getNextMoves(path.first(), cost)
+                            .filter { maze[it.first.pos] != Maze.WALL }
+                            .forEach {
+                                val l = listOf(it.first) + path
+                                queue.add(l to it.second)
+                            }
 
-                val forward = next.copy(pos = next.pos + next.dir.vector)
-                val forwardSet = if (maze[forward.pos] != Maze.WALL) {
-                    updateShortest(forward, currentDistance + 1)
-                    setOf(forward)
-                } else {
-                    emptySet()
+                        findAllShortestPaths(pointsInShortest)
+                    }
+
+                    else -> findAllShortestPaths(pointsInShortest)
                 }
 
-
-                val left = if (canTurnLeft(next)) {
-                    val element = next.copy(dir = next.dir.turnLeft())
-                    updateShortest(element, currentDistance + 1000)
-                    setOf(element)
-                } else {
-                    emptySet()
-                }
-                val right = if (canTurnRight(next)) {
-                    val element = next.copy(dir = next.dir.turnRight())
-                    updateShortest(element, currentDistance + 1000)
-                    setOf(element)
-                } else {
-                    emptySet()
-                }
-
-
-                val nextPoints = (possiblePoints - next + forwardSet + left + right)
-                    .filter { it !in visited }
-                    .toSet()
-                bestPath(nextPoints, visited + next)
             }
+
+
         }
 
-        return bestPath(setOf(startReindeer), emptySet())
+        return findAllShortestPaths(emptySet()).size
     }
 
-    override fun solve2(data: List<List<Maze>>): Long {
-        TODO("Not yet implemented")
+    private fun getNextMoves(r: Reindeer, currentDistance: Int): Set<Pair<Reindeer, Int>> {
+        val forward = r.copy(pos = r.pos + r.dir.vector)
+        val left = r.copy(dir = r.dir.turnLeft())
+        val right = r.copy(dir = r.dir.turnRight())
+        return setOf(
+            forward to currentDistance + 1,
+            left to currentDistance + 1000,
+            right to currentDistance + 1000
+        )
+    }
+
+    private fun bestPath(possiblePoints: Set<Reindeer>, maze: Grid<Maze>): Int {
+        val starReindeer = possiblePoints.first()
+        val end = maze.filter { it.value == Maze.END }.keys.first()
+
+        val queue = PriorityQueue<Pair<Reindeer, Int>>(compareBy { it.second })
+            .apply { add(Pair(starReindeer, 0)) }
+        val distances: MutableMap<Reindeer, Int> = mutableMapOf()
+
+        tailrec fun rec(): Int {
+            return if (queue.isEmpty()) Int.MAX_VALUE else {
+                val (next, cost) = queue.poll()
+                if (next.pos == end) cost else if (distances.getOrDefault(next, Int.MAX_VALUE) > cost) {
+                    distances[next] = cost
+                    getNextMoves(next, cost)
+                        .filter { maze[it.first.pos] != Maze.WALL }
+                        .forEach { queue.add(it) }
+
+                    rec()
+                } else {
+                    rec()
+                }
+            }
+        }
+
+        return rec()
     }
 }
