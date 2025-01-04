@@ -8,6 +8,11 @@ class LANPartyTest {
 
     @Test
     fun sample1star1() {
-        assertEquals(7, sample1.star1())
+        assertEquals("7", sample1.star1())
+    }
+
+    @Test
+    fun sample1star2() {
+        assertEquals("co,de,ka,ta", sample1.star2())
     }
 }

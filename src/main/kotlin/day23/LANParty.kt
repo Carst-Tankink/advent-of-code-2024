@@ -2,12 +2,12 @@ package day23
 
 import util.Solution
 
-class LANParty(fileName: String?) : Solution<Pair<String, String>, Int>(fileName) {
+class LANParty(fileName: String?) : Solution<Pair<String, String>, String>(fileName) {
     override fun parse(line: String): Pair<String, String> = line
         .split("-")
         .let { Pair(it[0], it[1]) }
 
-    override fun solve1(data: List<Pair<String, String>>): Int {
+    override fun solve1(data: List<Pair<String, String>>): String {
         val neighbours = (data + data.map { it.second to it.first })
             .groupBy { it.first }
             .mapValues { it.value.map { p -> p.second } }
@@ -28,13 +28,33 @@ class LANParty(fileName: String?) : Solution<Pair<String, String>, Int>(fileName
             }
         }.toSet()
 
+        return cliques.count { it.any { n -> n.startsWith('t') } }.toString()
+    }
 
-        return cliques.count { it.any { n -> n.startsWith('t') } }
+    override fun solve2(data: List<Pair<String, String>>): String {
+        val neighbors = data
+            .flatMap { listOf(it.first to it.second, it.second to it.first) }
+            .groupBy({ it.first }) { it.second }
+            .mapValues { it.value.toSet() }
+
+        fun findMaximumClique(
+            P: Set<String>,
+            R: Set<String> = emptySet(),
+            X: Set<String> = emptySet()
+        ): Set<String> {
+            return if (P.isEmpty() && X.isEmpty()) R else {
+                val withMostNeighbors: String = (P + X).maxBy { neighbors.getValue(it).size }
+                P.minus(neighbors.getValue(withMostNeighbors)).map { V ->
+                    findMaximumClique(
+                        P intersect neighbors.getValue(V),
+                        R + V,
+                        X intersect neighbors.getValue(V)
+                    )
+                }.maxBy { it.size }
+            }
+        }
+        return findMaximumClique(neighbors.keys).sorted().joinToString(",")
     }
 
 
-
-    override fun solve2(data: List<Pair<String, String>>): Int {
-        TODO("Not yet implemented")
-    }
 }
