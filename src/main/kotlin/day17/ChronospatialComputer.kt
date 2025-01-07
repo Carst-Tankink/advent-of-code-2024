@@ -3,15 +3,15 @@ package day17
 import util.Solution
 
 sealed interface ComputerLine
-data class Register(val identifier: String, val content: Int) : ComputerLine
+data class Register(val identifier: String, val content: Long) : ComputerLine
 data class Instructions(val ins: List<Int>) : ComputerLine
 
 data class ProgramState(
     val pointer: Int,
-    val regA: Int,
-    val regB: Int,
-    val regC: Int,
-    val output: List<Int>
+    val regA: Long,
+    val regB: Long,
+    val regC: Long,
+    val output: List<Long>
 )
 
 class ChronospatialComputer(fileName: String?) : Solution<ComputerLine, String>(fileName) {
@@ -21,7 +21,7 @@ class ChronospatialComputer(fileName: String?) : Solution<ComputerLine, String>(
             line.isEmpty() -> null
             registerRegEx.matches(line) -> {
                 val groups = registerRegEx.find(line)!!.groupValues
-                Register(groups[1], groups[2].toInt())
+                Register(groups[1], groups[2].toLong())
             }
 
             line.startsWith("Program: ") -> {
@@ -39,11 +39,17 @@ class ChronospatialComputer(fileName: String?) : Solution<ComputerLine, String>(
         val registers = data.filterIsInstance<Register>()
         return interpret(
             instructions,
-            ProgramState(0, registers[0].content, registers[1].content, registers[2].content, emptyList())
+            ProgramState(
+                0,
+                registers[0].content,
+                registers[1].content,
+                registers[2].content,
+                emptyList()
+            )
         ).joinToString(",")
     }
 
-    private tailrec fun interpret(instructions: List<Int>, programState: ProgramState): List<Int> {
+    private tailrec fun interpret(instructions: List<Int>, programState: ProgramState): List<Long> {
         return if (programState.pointer >= instructions.size) programState.output else {
             val opcode = instructions[programState.pointer]
             val operand = instructions[programState.pointer + 1]
@@ -57,16 +63,48 @@ class ChronospatialComputer(fileName: String?) : Solution<ComputerLine, String>(
     override fun solve2(data: List<ComputerLine>): String {
         val instructions = data.filterIsInstance<Instructions>().first().ins
         val registers = data.filterIsInstance<Register>()
+        val computer = ProgramState(
+            0,
+            registers[0].content,
+            registers[1].content,
+            registers[2].content,
+            emptyList()
+        )
 
-        val numbers = generateSequence(0) { it + 1 }
+        fun findInput(candidate: Long, remainingInstructions: List<Long>): Long? {
+            return when {
+                interpret(instructions, computer.copy(regA = candidate)) == instructions -> {
+                    candidate
+                }
+                remainingInstructions.isEmpty() -> candidate
+                else -> {
+                    val shifted = candidate shl 3
+                    val others = (shifted..shifted + 7).mapNotNull {
+                        val withAttempt = computer.copy(regA = it)
+                        val result = interpret(instructions, withAttempt).first()
+                        it.takeIf { result == remainingInstructions.last() }
+                    }
 
-        val quine = numbers.first {
-            val output = interpret(instructions, ProgramState(pointer = 0, regA = it, regB = registers[1].content, regC = registers[2].content, output = emptyList()))
-
-            output == instructions
+                    others.minOfOrNull { findInput(it, remainingInstructions.dropLast(1)) ?: Long.MAX_VALUE }
+                }
+            }
         }
 
-        return quine.toString()
+
+        return findInput(0L, instructions.map { it.toLong() }).toString()
+        /*return instructions
+            .reversed()
+            .map { it.toLong() }
+            .fold(listOf(0L)) { candidates, instruction ->
+                candidates.flatMap { candidate ->
+                    val shifted = candidate shl 3
+                    (shifted..shifted + 8).mapNotNull { attempt ->
+                        val withAttempt = computer.copy(regA = attempt)
+                        val result = interpret(instructions, withAttempt).first()
+                        attempt.takeIf { result == instruction }
+                    }
+                }
+            }.toString()*/
     }
 
     private fun doInstruction(opcode: Int, operand: Int, programState: ProgramState): ProgramState {
@@ -79,9 +117,9 @@ class ChronospatialComputer(fileName: String?) : Solution<ComputerLine, String>(
                 programState.copy(pointer = newPointer, regA = numerator / denominator)
             }
 
-            1 -> programState.copy(pointer = newPointer, regB = programState.regB xor operand)
+            1 -> programState.copy(pointer = newPointer, regB = programState.regB xor operand.toLong())
             2 -> programState.copy(pointer = newPointer, regB = getCombo(operand, programState) % 8)
-            3 -> if (programState.regA == 0) programState.copy(pointer = newPointer) else {
+            3 -> if (programState.regA == 0L) programState.copy(pointer = newPointer) else {
                 programState.copy(pointer = operand)
             }
 
@@ -109,9 +147,9 @@ class ChronospatialComputer(fileName: String?) : Solution<ComputerLine, String>(
         }
     }
 
-    private fun getCombo(operand: Int, programState: ProgramState): Int {
+    private fun getCombo(operand: Int, programState: ProgramState): Long {
         return when (operand) {
-            in 0..3 -> operand
+            in 0..3 -> operand.toLong()
             4 -> programState.regA
             5 -> programState.regB
             6 -> programState.regC
@@ -120,8 +158,8 @@ class ChronospatialComputer(fileName: String?) : Solution<ComputerLine, String>(
         }
     }
 
-    private tailrec fun powerTwo(n: Int, r: Int = 1): Int {
-        return if (n == 0) r else {
+    private tailrec fun powerTwo(n: Long, r: Long = 1): Long {
+        return if (n == 0L) r else {
             powerTwo(n - 1, 2 * r)
         }
     }
